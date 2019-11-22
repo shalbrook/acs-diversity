@@ -1,0 +1,24 @@
+---
+title: "ACS Diversity"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+---
+
+This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson's Diversity Index via the R diversity library. Then it shows the top 10 MSAs by their SDI.
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(vegan)
+race <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area", variables = c("B03002_001","B03002_003","B03002_004","B03002_005","B03002_006","B03002_007","B03002_008","B03002_009","B03002_012"))
+race <- select(race,-c(moe))
+races <- spread(race,variable,estimate)
+races$sdi <- diversity(races[,4:11],"simpson")
+races %>% top_n(10) %>% arrange(desc(sdi)) %>% select(NAME, sdi)
+```
+
+
+
