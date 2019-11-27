@@ -56,3 +56,17 @@ races %>%
   kable(digits=3, col.names = c("MSA","Total population","SDI"), format.args = list(big.mark = ","))
 ```
 
+Let's take a look by county and do it all again.
+
+```{r message=FALSE}
+race <- get_acs(geography = "county", variables = c("B03002_001","B03002_003","B03002_004","B03002_005","B03002_006","B03002_007","B03002_008","B03002_009","B03002_012"))
+race <- select(race,-c(moe))
+races <- spread(race,variable,estimate)
+races$sdi <- diversity(races[,4:11],"simpson")
+races %>%
+  filter(B03002_001 >= 200001) %>%
+  top_n(10) %>%
+  arrange(desc(sdi)) %>%
+  select(NAME, B03002_001, sdi) %>%
+  kable(digits=3, col.names = c("County","Total population","SDI"), format.args = list(big.mark = ","))
+```

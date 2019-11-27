@@ -349,6 +349,78 @@ races %&gt;%
 </tr>
 </tbody>
 </table>
+<p>Let’s take a look by county and do it all again.</p>
+<pre class="r"><code>race &lt;- get_acs(geography = &quot;county&quot;, variables = c(&quot;B03002_001&quot;,&quot;B03002_003&quot;,&quot;B03002_004&quot;,&quot;B03002_005&quot;,&quot;B03002_006&quot;,&quot;B03002_007&quot;,&quot;B03002_008&quot;,&quot;B03002_009&quot;,&quot;B03002_012&quot;))
+race &lt;- select(race,-c(moe))
+races &lt;- spread(race,variable,estimate)
+races$sdi &lt;- diversity(races[,4:11],&quot;simpson&quot;)
+races %&gt;%
+  filter(B03002_001 &gt;= 200001) %&gt;%
+  top_n(10) %&gt;%
+  arrange(desc(sdi)) %&gt;%
+  select(NAME, B03002_001, sdi) %&gt;%
+  kable(digits=3, col.names = c(&quot;County&quot;,&quot;Total population&quot;,&quot;SDI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">County</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Queens County, New York</td>
+<td align="right">2,339,280</td>
+<td align="right">0.764</td>
+</tr>
+<tr class="even">
+<td align="left">Alameda County, California</td>
+<td align="right">1,629,615</td>
+<td align="right">0.749</td>
+</tr>
+<tr class="odd">
+<td align="left">Fort Bend County, Texas</td>
+<td align="right">711,421</td>
+<td align="right">0.745</td>
+</tr>
+<tr class="even">
+<td align="left">Solano County, California</td>
+<td align="right">434,981</td>
+<td align="right">0.738</td>
+</tr>
+<tr class="odd">
+<td align="left">Honolulu County, Hawaii</td>
+<td align="right">990,060</td>
+<td align="right">0.738</td>
+</tr>
+<tr class="even">
+<td align="left">Kings County, New York</td>
+<td align="right">2,635,121</td>
+<td align="right">0.726</td>
+</tr>
+<tr class="odd">
+<td align="left">Gwinnett County, Georgia</td>
+<td align="right">889,954</td>
+<td align="right">0.722</td>
+</tr>
+<tr class="even">
+<td align="left">Montgomery County, Maryland</td>
+<td align="right">1,039,198</td>
+<td align="right">0.708</td>
+</tr>
+<tr class="odd">
+<td align="left">Sacramento County, California</td>
+<td align="right">1,495,400</td>
+<td align="right">0.704</td>
+</tr>
+<tr class="even">
+<td align="left">San Mateo County, California</td>
+<td align="right">763,450</td>
+<td align="right">0.703</td>
+</tr>
+</tbody>
+</table>
 
 
 
