@@ -7,18 +7,52 @@ knit: (function(input_file, encoding) {
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
-This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson's Diversity Index via the R diversity library. Then it shows the top 10 MSAs by their SDI.
+This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson's Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tidycensus)
 library(vegan)
+library(knitr)
+```
+
+Now get some values for population by ethnicity. The variable names represent the following:
+
+* B03002_001 - Total
+* B03002_003 - White Not Hispanic
+* B03002_004 - Black Not Hispanic
+* B03002_005 - American Indian and Alask Native Not Hispanic
+* B03002_006 - Asian Not Hispanic
+* B03002_007 - Native Hawaiian and Other Pacific Islander Not Hispanic
+* B03002_008 - Some Other Race Not Hispanic
+* B03002_009 - Two or More Races Not Hispanic
+* B03002_012 - Hispanic or Latino
+
+```{r message=FALSE}
 race <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area", variables = c("B03002_001","B03002_003","B03002_004","B03002_005","B03002_006","B03002_007","B03002_008","B03002_009","B03002_012"))
 race <- select(race,-c(moe))
 races <- spread(race,variable,estimate)
-races$sdi <- diversity(races[,4:11],"simpson")
-races %>% top_n(10) %>% arrange(desc(sdi)) %>% select(NAME, sdi)
 ```
 
+Next calculate the Simpson Diversity Index, or the Herfindahl–Hirschman index (HHI). Essentially, this index measures the probability that two specimens taken from the population will be of different type.
 
+```{r message=FALSE}
+races$sdi <- diversity(races[,4:11],"simpson")
+races %>%
+  top_n(10) %>%
+  arrange(desc(sdi)) %>%
+  select(NAME, B03002_001, sdi) %>%
+  kable(digits=3, col.names = c("MSA","Total population","SDI"), format.args = list(big.mark = ","))
+```
+
+Lots of places with a fairly small population. What about the top 10 over some arbitrary total, like a million and one people?
+
+```{r message=FALSE}
+races %>%
+  filter(B03002_001 >= 1000001) %>%
+  top_n(10) %>%
+  arrange(desc(sdi)) %>%
+  select(NAME, B03002_001, sdi) %>%
+  kable(digits=3, col.names = c("MSA","Total population","SDI"), format.args = list(big.mark = ","))
+```
 

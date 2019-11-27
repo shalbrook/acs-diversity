@@ -193,41 +193,162 @@ $(document).ready(function () {
 </div>
 
 
-<p>This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson’s Diversity Index via the R diversity library. Then it shows the top 10 MSAs by their SDI.</p>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ──────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
-<pre><code>## ✔ ggplot2 3.1.0       ✔ purrr   0.3.2  
-## ✔ tibble  2.1.1       ✔ dplyr   0.8.0.1
-## ✔ tidyr   0.8.3       ✔ stringr 1.4.0  
-## ✔ readr   1.3.1       ✔ forcats 0.4.0</code></pre>
-<pre><code>## ── Conflicts ─────────────────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(tidycensus)
-library(vegan)</code></pre>
-<pre><code>## Loading required package: permute</code></pre>
-<pre><code>## Loading required package: lattice</code></pre>
-<pre><code>## This is vegan 2.5-5</code></pre>
-<pre class="r"><code>race &lt;- get_acs(geography = &quot;metropolitan statistical area/micropolitan statistical area&quot;, variables = c(&quot;B03002_001&quot;,&quot;B03002_003&quot;,&quot;B03002_004&quot;,&quot;B03002_005&quot;,&quot;B03002_006&quot;,&quot;B03002_007&quot;,&quot;B03002_008&quot;,&quot;B03002_009&quot;,&quot;B03002_012&quot;))</code></pre>
-<pre><code>## Getting data from the 2013-2017 5-year ACS</code></pre>
-<pre class="r"><code>race &lt;- select(race,-c(moe))
-races &lt;- spread(race,variable,estimate)
-races$sdi &lt;- diversity(races[,4:11],&quot;simpson&quot;)
-races %&gt;% top_n(10) %&gt;% arrange(desc(sdi)) %&gt;% select(NAME, sdi)</code></pre>
-<pre><code>## Selecting by sdi</code></pre>
-<pre><code>## # A tibble: 10 x 2
-##    NAME                                              sdi
-##    &lt;chr&gt;                                           &lt;dbl&gt;
-##  1 Hilo, HI Micro Area                             0.778
-##  2 Kahului-Wailuku-Lahaina, HI Metro Area          0.767
-##  3 Kapaa, HI Micro Area                            0.756
-##  4 Vallejo-Fairfield, CA Metro Area                0.738
-##  5 Urban Honolulu, HI Metro Area                   0.738
-##  6 San Francisco-Oakland-Hayward, CA Metro Area    0.720
-##  7 Lumberton, NC Micro Area                        0.719
-##  8 San Jose-Sunnyvale-Santa Clara, CA Metro Area   0.703
-##  9 Stockton-Lodi, CA Metro Area                    0.696
-## 10 Houston-The Woodlands-Sugar Land, TX Metro Area 0.693</code></pre>
+<p>This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson’s Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI.</p>
+<pre class="r"><code>library(tidyverse)
+library(tidycensus)
+library(vegan)
+library(knitr)</code></pre>
+<p>Now get some values for population by ethnicity. The variable names represent the following:</p>
+<ul>
+<li>B03002_001 - Total</li>
+<li>B03002_003 - White Not Hispanic</li>
+<li>B03002_004 - Black Not Hispanic</li>
+<li>B03002_005 - American Indian and Alask Native Not Hispanic</li>
+<li>B03002_006 - Asian Not Hispanic</li>
+<li>B03002_007 - Native Hawaiian and Other Pacific Islander Not Hispanic</li>
+<li>B03002_008 - Some Other Race Not Hispanic</li>
+<li>B03002_009 - Two or More Races Not Hispanic</li>
+<li>B03002_012 - Hispanic or Latino</li>
+</ul>
+<pre class="r"><code>race &lt;- get_acs(geography = &quot;metropolitan statistical area/micropolitan statistical area&quot;, variables = c(&quot;B03002_001&quot;,&quot;B03002_003&quot;,&quot;B03002_004&quot;,&quot;B03002_005&quot;,&quot;B03002_006&quot;,&quot;B03002_007&quot;,&quot;B03002_008&quot;,&quot;B03002_009&quot;,&quot;B03002_012&quot;))
+race &lt;- select(race,-c(moe))
+races &lt;- spread(race,variable,estimate)</code></pre>
+<p>Next calculate the Simpson Diversity Index, or the Herfindahl–Hirschman index (HHI). Essentially, this index measures the probability that two specimens taken from the population will be of different type.</p>
+<pre class="r"><code>races$sdi &lt;- diversity(races[,4:11],&quot;simpson&quot;)
+races %&gt;%
+  top_n(10) %&gt;%
+  arrange(desc(sdi)) %&gt;%
+  select(NAME, B03002_001, sdi) %&gt;%
+  kable(digits=3, col.names = c(&quot;MSA&quot;,&quot;Total population&quot;,&quot;SDI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">MSA</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Hilo, HI Micro Area</td>
+<td align="right">196,325</td>
+<td align="right">0.778</td>
+</tr>
+<tr class="even">
+<td align="left">Kahului-Wailuku-Lahaina, HI Metro Area</td>
+<td align="right">164,180</td>
+<td align="right">0.767</td>
+</tr>
+<tr class="odd">
+<td align="left">Kapaa, HI Micro Area</td>
+<td align="right">71,093</td>
+<td align="right">0.756</td>
+</tr>
+<tr class="even">
+<td align="left">Vallejo-Fairfield, CA Metro Area</td>
+<td align="right">434,981</td>
+<td align="right">0.738</td>
+</tr>
+<tr class="odd">
+<td align="left">Urban Honolulu, HI Metro Area</td>
+<td align="right">990,060</td>
+<td align="right">0.738</td>
+</tr>
+<tr class="even">
+<td align="left">San Francisco-Oakland-Hayward, CA Metro Area</td>
+<td align="right">4,641,820</td>
+<td align="right">0.720</td>
+</tr>
+<tr class="odd">
+<td align="left">Lumberton, NC Micro Area</td>
+<td align="right">134,187</td>
+<td align="right">0.719</td>
+</tr>
+<tr class="even">
+<td align="left">San Jose-Sunnyvale-Santa Clara, CA Metro Area</td>
+<td align="right">1,969,897</td>
+<td align="right">0.703</td>
+</tr>
+<tr class="odd">
+<td align="left">Stockton-Lodi, CA Metro Area</td>
+<td align="right">724,153</td>
+<td align="right">0.696</td>
+</tr>
+<tr class="even">
+<td align="left">Houston-The Woodlands-Sugar Land, TX Metro Area</td>
+<td align="right">6,636,208</td>
+<td align="right">0.693</td>
+</tr>
+</tbody>
+</table>
+<p>Lots of places with a fairly small population. What about the top 10 over some arbitrary total, like a million and one people?</p>
+<pre class="r"><code>races %&gt;%
+  filter(B03002_001 &gt;= 1000001) %&gt;%
+  top_n(10) %&gt;%
+  arrange(desc(sdi)) %&gt;%
+  select(NAME, B03002_001, sdi) %&gt;%
+  kable(digits=3, col.names = c(&quot;MSA&quot;,&quot;Total population&quot;,&quot;SDI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">MSA</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">San Francisco-Oakland-Hayward, CA Metro Area</td>
+<td align="right">4,641,820</td>
+<td align="right">0.720</td>
+</tr>
+<tr class="even">
+<td align="left">San Jose-Sunnyvale-Santa Clara, CA Metro Area</td>
+<td align="right">1,969,897</td>
+<td align="right">0.703</td>
+</tr>
+<tr class="odd">
+<td align="left">Houston-The Woodlands-Sugar Land, TX Metro Area</td>
+<td align="right">6,636,208</td>
+<td align="right">0.693</td>
+</tr>
+<tr class="even">
+<td align="left">Washington-Arlington-Alexandria, DC-VA-MD-WV Metro Area</td>
+<td align="right">6,090,196</td>
+<td align="right">0.690</td>
+</tr>
+<tr class="odd">
+<td align="left">Las Vegas-Henderson-Paradise, NV Metro Area</td>
+<td align="right">2,112,436</td>
+<td align="right">0.689</td>
+</tr>
+<tr class="even">
+<td align="left">New York-Newark-Jersey City, NY-NJ-PA Metro Area</td>
+<td align="right">20,192,042</td>
+<td align="right">0.685</td>
+</tr>
+<tr class="odd">
+<td align="left">Los Angeles-Long Beach-Anaheim, CA Metro Area</td>
+<td align="right">13,261,538</td>
+<td align="right">0.678</td>
+</tr>
+<tr class="even">
+<td align="left">Dallas-Fort Worth-Arlington, TX Metro Area</td>
+<td align="right">7,104,415</td>
+<td align="right">0.665</td>
+</tr>
+<tr class="odd">
+<td align="left">Miami-Fort Lauderdale-West Palm Beach, FL Metro Area</td>
+<td align="right">6,019,790</td>
+<td align="right">0.664</td>
+</tr>
+<tr class="even">
+<td align="left">San Diego-Carlsbad, CA Metro Area</td>
+<td align="right">3,283,665</td>
+<td align="right">0.659</td>
+</tr>
+</tbody>
+</table>
 
 
 
