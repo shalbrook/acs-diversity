@@ -7,7 +7,7 @@ knit: (function(input_file, encoding) {
  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
-This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson's Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI.
+This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson's Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI. Then we compute some SDIs of other geographic divisions.
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -69,4 +69,57 @@ races %>%
   arrange(desc(sdi)) %>%
   select(NAME, B03002_001, sdi) %>%
   kable(digits=3, col.names = c("County","Total population","SDI"), format.args = list(big.mark = ","))
+```
+
+Or congressional districts with the highest diversity:
+
+```{r message=FALSE}
+race <- get_acs(geography = "congressional district", variables = c("B03002_001","B03002_003","B03002_004","B03002_005","B03002_006","B03002_007","B03002_008","B03002_009","B03002_012"))
+race <- select(race,-c(moe))
+races <- spread(race,variable,estimate)
+races$sdi <- diversity(races[,4:11],"simpson")
+races %>%
+  #filter(B03002_001 >= 200001) %>%
+  top_n(10) %>%
+  arrange(desc(sdi)) %>%
+  select(NAME, B03002_001, sdi) %>%
+  kable(digits=3, col.names = c("Congressional district","Total population","SDI"), format.args = list(big.mark = ","))
+```
+
+and the districts with the lowest:
+
+```{r message=FALSE}
+races %>%
+  top_n(-10) %>%
+  arrange(sdi) %>%
+  select(NAME, B03002_001, sdi) %>%
+  kable(digits=3, col.names = c("Congressional district","Total population","SDI"), format.args = list(big.mark = ","))
+```
+
+How does diversity of a congressional district compare to its political leaning? Let's use data from the [Cook Political Report](https://cookpolitical.com/pvi-map-and-district-list). First we need to do some manipulation to get the Census's district IDs to match Cook's in order to properly join the tables.
+
+```{r warning=FALSE, message = FALSE}
+races$nums <- str_extract(races$NAME, " \\d\\d? ") %>% str_trim()
+races$nums <- sprintf("%02d", as.numeric(races$nums))
+races$nums[is.na(races$nums)] <- "AL"
+races <- races %>%
+  mutate(states = state.abb[match(str_extract(NAME, '\\b[^,]+$'),state.name)]) %>%
+  mutate(Dist = str_c(states, nums, sep = "-"))
+cook <- read.csv("data-5vPn3.csv", header=TRUE)
+cds <- inner_join(cook, races)
+cds %>%
+  top_n(20, sdi) %>%
+  arrange(desc(sdi)) %>%
+  select(NAME, Incumbent, B03002_001, sdi, PVI) %>%
+  kable(digits=3, col.names = c("Congressional district","Member","Total population","SDI","PVI"), format.args = list(big.mark = ","))
+```
+
+Most, but not all, diverse districts lean Democratic. What about the 20 least diverse districts?
+
+```{r}
+cds %>%
+  top_n(-20, sdi) %>%
+  arrange(sdi) %>%
+  select(NAME, Incumbent, B03002_001, sdi, PVI) %>%
+  kable(digits=3, col.names = c("Congressional district","Member","Total population","SDI","PVI"), format.args = list(big.mark = ","))
 ```

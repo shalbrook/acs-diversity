@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 
@@ -83,7 +83,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -145,6 +144,7 @@ summary {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -156,18 +156,6 @@ summary {
   display: none;
 }
 </style>
-
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
-  });
-});
-</script>
 
 <!-- code folding -->
 
@@ -193,7 +181,7 @@ $(document).ready(function () {
 </div>
 
 
-<p>This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson’s Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI.</p>
+<p>This is a brief script to calculate the diversity of micro- and metro-SAs using ACS data, the R tidycensus library, and Simpson’s Diversity Index via the R vegan library. Then it shows the top 10 MSAs by their SDI. Then we compute some SDIs of other geographic divisions.</p>
 <pre class="r"><code>library(tidyverse)
 library(tidycensus)
 library(vegan)
@@ -421,6 +409,471 @@ races %&gt;%
 </tr>
 </tbody>
 </table>
+<p>Or congressional districts with the highest diversity:</p>
+<pre class="r"><code>race &lt;- get_acs(geography = &quot;congressional district&quot;, variables = c(&quot;B03002_001&quot;,&quot;B03002_003&quot;,&quot;B03002_004&quot;,&quot;B03002_005&quot;,&quot;B03002_006&quot;,&quot;B03002_007&quot;,&quot;B03002_008&quot;,&quot;B03002_009&quot;,&quot;B03002_012&quot;))
+race &lt;- select(race,-c(moe))
+races &lt;- spread(race,variable,estimate)
+races$sdi &lt;- diversity(races[,4:11],&quot;simpson&quot;)
+races %&gt;%
+  #filter(B03002_001 &gt;= 200001) %&gt;%
+  top_n(10) %&gt;%
+  arrange(desc(sdi)) %&gt;%
+  select(NAME, B03002_001, sdi) %&gt;%
+  kable(digits=3, col.names = c(&quot;Congressional district&quot;,&quot;Total population&quot;,&quot;SDI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Congressional district</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Congressional District 2 (115th Congress), Hawaii</td>
+<td align="right">710,433</td>
+<td align="right">0.782</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 13 (115th Congress), California</td>
+<td align="right">750,102</td>
+<td align="right">0.761</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 6 (115th Congress), California</td>
+<td align="right">743,423</td>
+<td align="right">0.742</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 37 (115th Congress), California</td>
+<td align="right">721,893</td>
+<td align="right">0.726</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 15 (115th Congress), California</td>
+<td align="right">764,963</td>
+<td align="right">0.726</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 47 (115th Congress), California</td>
+<td align="right">717,209</td>
+<td align="right">0.721</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 7 (115th Congress), Massachusetts</td>
+<td align="right">781,304</td>
+<td align="right">0.719</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 22 (115th Congress), Texas</td>
+<td align="right">844,913</td>
+<td align="right">0.715</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 14 (115th Congress), California</td>
+<td align="right">750,274</td>
+<td align="right">0.712</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 10 (115th Congress), Florida</td>
+<td align="right">787,875</td>
+<td align="right">0.711</td>
+</tr>
+</tbody>
+</table>
+<p>and the districts with the lowest:</p>
+<pre class="r"><code>races %&gt;%
+  top_n(-10) %&gt;%
+  arrange(sdi) %&gt;%
+  select(NAME, B03002_001, sdi) %&gt;%
+  kable(digits=3, col.names = c(&quot;Congressional district&quot;,&quot;Total population&quot;,&quot;SDI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Congressional district</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Resident Commissioner District (at Large) (115th Congress), Puerto Rico</td>
+<td align="right">3,468,963</td>
+<td align="right">0.021</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 5 (115th Congress), Kentucky</td>
+<td align="right">706,248</td>
+<td align="right">0.083</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 6 (115th Congress), Ohio</td>
+<td align="right">703,764</td>
+<td align="right">0.106</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 2 (115th Congress), Maine</td>
+<td align="right">655,084</td>
+<td align="right">0.112</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 1 (115th Congress), West Virginia</td>
+<td align="right">615,449</td>
+<td align="right">0.125</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District (at Large) (115th Congress), Vermont</td>
+<td align="right">624,636</td>
+<td align="right">0.130</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 1 (115th Congress), Maine</td>
+<td align="right">675,074</td>
+<td align="right">0.134</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 3 (115th Congress), West Virginia</td>
+<td align="right">597,674</td>
+<td align="right">0.134</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 9 (115th Congress), Pennsylvania</td>
+<td align="right">694,033</td>
+<td align="right">0.137</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 18 (115th Congress), Pennsylvania</td>
+<td align="right">704,815</td>
+<td align="right">0.141</td>
+</tr>
+</tbody>
+</table>
+<p>How does diversity of a congressional district compare to its political leaning? Let’s use data from the <a href="https://cookpolitical.com/pvi-map-and-district-list">Cook Political Report</a>. First we need to do some manipulation to get the Census’s district IDs to match Cook’s in order to properly join the tables.</p>
+<pre class="r"><code>races$nums &lt;- str_extract(races$NAME, &quot; \\d\\d? &quot;) %&gt;% str_trim()
+races$nums &lt;- sprintf(&quot;%02d&quot;, as.numeric(races$nums))
+races$nums[is.na(races$nums)] &lt;- &quot;AL&quot;
+races &lt;- races %&gt;%
+  mutate(states = state.abb[match(str_extract(NAME, '\\b[^,]+$'),state.name)]) %&gt;%
+  mutate(Dist = str_c(states, nums, sep = &quot;-&quot;))
+cook &lt;- read.csv(&quot;data-5vPn3.csv&quot;, header=TRUE)
+cds &lt;- inner_join(cook, races)
+cds %&gt;%
+  top_n(20, sdi) %&gt;%
+  arrange(desc(sdi)) %&gt;%
+  select(NAME, Incumbent, B03002_001, sdi, PVI) %&gt;%
+  kable(digits=3, col.names = c(&quot;Congressional district&quot;,&quot;Member&quot;,&quot;Total population&quot;,&quot;SDI&quot;,&quot;PVI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Congressional district</th>
+<th align="left">Member</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+<th align="left">PVI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Congressional District 2 (115th Congress), Hawaii</td>
+<td align="left">Tulsi Gabbard (D)</td>
+<td align="right">710,433</td>
+<td align="right">0.782</td>
+<td align="left">D+19</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 13 (115th Congress), California</td>
+<td align="left">Barbara Lee (D)</td>
+<td align="right">750,102</td>
+<td align="right">0.761</td>
+<td align="left">D+40</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 6 (115th Congress), California</td>
+<td align="left">Doris Matsui (D)</td>
+<td align="right">743,423</td>
+<td align="right">0.742</td>
+<td align="left">D+21</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 37 (115th Congress), California</td>
+<td align="left">Karen Bass (D)</td>
+<td align="right">721,893</td>
+<td align="right">0.726</td>
+<td align="left">D+37</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 15 (115th Congress), California</td>
+<td align="left">Eric Swalwell (D)</td>
+<td align="right">764,963</td>
+<td align="right">0.726</td>
+<td align="left">D+20</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 47 (115th Congress), California</td>
+<td align="left">Alan Lowenthal (D)</td>
+<td align="right">717,209</td>
+<td align="right">0.721</td>
+<td align="left">D+13</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 7 (115th Congress), Massachusetts</td>
+<td align="left">Ayanna Pressley (D)</td>
+<td align="right">781,304</td>
+<td align="right">0.719</td>
+<td align="left">D+34</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 22 (115th Congress), Texas</td>
+<td align="left">Pete Olson (R)</td>
+<td align="right">844,913</td>
+<td align="right">0.715</td>
+<td align="left">R+10</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 14 (115th Congress), California</td>
+<td align="left">Jackie Speier (D)</td>
+<td align="right">750,274</td>
+<td align="right">0.712</td>
+<td align="left">D+27</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 10 (115th Congress), Florida</td>
+<td align="left">Val Demings (D)</td>
+<td align="right">787,875</td>
+<td align="right">0.711</td>
+<td align="left">D+11</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 9 (115th Congress), California</td>
+<td align="left">Jerry McNerney (D)</td>
+<td align="right">750,185</td>
+<td align="right">0.708</td>
+<td align="left">D+8</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 16 (115th Congress), New York</td>
+<td align="left">Eliot Engel (D)</td>
+<td align="right">745,855</td>
+<td align="right">0.706</td>
+<td align="left">D+24</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 5 (115th Congress), New York</td>
+<td align="left">Gregory Meeks (D)</td>
+<td align="right">784,341</td>
+<td align="right">0.704</td>
+<td align="left">D+37</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 27 (115th Congress), California</td>
+<td align="left">Judy Chu (D)</td>
+<td align="right">719,377</td>
+<td align="right">0.703</td>
+<td align="left">D+16</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 9 (115th Congress), Washington</td>
+<td align="left">Adam Smith (D)</td>
+<td align="right">726,425</td>
+<td align="right">0.702</td>
+<td align="left">D+21</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 7 (115th Congress), New York</td>
+<td align="left">Nydia Velazquez (D)</td>
+<td align="right">750,580</td>
+<td align="right">0.700</td>
+<td align="left">D+38</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 7 (115th Congress), Georgia</td>
+<td align="left">Rob Woodall (R)</td>
+<td align="right">778,970</td>
+<td align="right">0.699</td>
+<td align="left">R+9</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 39 (115th Congress), California</td>
+<td align="left">Gil Cisneros (D)</td>
+<td align="right">726,854</td>
+<td align="right">0.699</td>
+<td align="left">EVEN</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 53 (115th Congress), California</td>
+<td align="left">Susan Davis (D)</td>
+<td align="right">761,273</td>
+<td align="right">0.699</td>
+<td align="left">D+14</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 11 (115th Congress), Virginia</td>
+<td align="left">Gerry Connolly (D)</td>
+<td align="right">787,515</td>
+<td align="right">0.699</td>
+<td align="left">D+15</td>
+</tr>
+</tbody>
+</table>
+<p>Most, but not all, diverse districts lean Democratic. What about the 20 least diverse districts?</p>
+<pre class="r"><code>cds %&gt;%
+  top_n(-20, sdi) %&gt;%
+  arrange(sdi) %&gt;%
+  select(NAME, Incumbent, B03002_001, sdi, PVI) %&gt;%
+  kable(digits=3, col.names = c(&quot;Congressional district&quot;,&quot;Member&quot;,&quot;Total population&quot;,&quot;SDI&quot;,&quot;PVI&quot;), format.args = list(big.mark = &quot;,&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Congressional district</th>
+<th align="left">Member</th>
+<th align="right">Total population</th>
+<th align="right">SDI</th>
+<th align="left">PVI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Congressional District 5 (115th Congress), Kentucky</td>
+<td align="left">Hal Rogers (R)</td>
+<td align="right">706,248</td>
+<td align="right">0.083</td>
+<td align="left">R+31</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 6 (115th Congress), Ohio</td>
+<td align="left">Bill Johnson (R)</td>
+<td align="right">703,764</td>
+<td align="right">0.106</td>
+<td align="left">R+16</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 2 (115th Congress), Maine</td>
+<td align="left">Jared Golden (D)</td>
+<td align="right">655,084</td>
+<td align="right">0.112</td>
+<td align="left">R+2</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 1 (115th Congress), West Virginia</td>
+<td align="left">David McKinley (R)</td>
+<td align="right">615,449</td>
+<td align="right">0.125</td>
+<td align="left">R+19</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 1 (115th Congress), Maine</td>
+<td align="left">Chellie Pingree (D)</td>
+<td align="right">675,074</td>
+<td align="right">0.134</td>
+<td align="left">D+8</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 3 (115th Congress), West Virginia</td>
+<td align="left">Carol Miller (R)</td>
+<td align="right">597,674</td>
+<td align="right">0.134</td>
+<td align="left">R+23</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 9 (115th Congress), Pennsylvania</td>
+<td align="left">Dan Meuser (R)</td>
+<td align="right">694,033</td>
+<td align="right">0.137</td>
+<td align="left">R+14</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 18 (115th Congress), Pennsylvania</td>
+<td align="left">Mike Doyle (D)</td>
+<td align="right">704,815</td>
+<td align="right">0.141</td>
+<td align="left">D+13</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 5 (115th Congress), Pennsylvania</td>
+<td align="left">Mary Gay Scanlon (D)</td>
+<td align="right">702,582</td>
+<td align="right">0.148</td>
+<td align="left">D+13</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 3 (115th Congress), Wisconsin</td>
+<td align="left">Ron Kind (D)</td>
+<td align="right">718,086</td>
+<td align="right">0.150</td>
+<td align="left">EVEN</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 7 (115th Congress), Wisconsin</td>
+<td align="left">Sean Duffy (R)</td>
+<td align="right">707,988</td>
+<td align="right">0.153</td>
+<td align="left">R+8</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 8 (115th Congress), Minnesota</td>
+<td align="left">Pete Stauber (R)</td>
+<td align="right">663,113</td>
+<td align="right">0.154</td>
+<td align="left">R+4</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 12 (115th Congress), Pennsylvania</td>
+<td align="left">VACANT (Marino) (R)</td>
+<td align="right">699,504</td>
+<td align="right">0.155</td>
+<td align="left">R+17</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 27 (115th Congress), New York</td>
+<td align="left">Chris Collins (R)</td>
+<td align="right">718,095</td>
+<td align="right">0.155</td>
+<td align="left">R+11</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 16 (115th Congress), Ohio</td>
+<td align="left">Anthony Gonzalez (R)</td>
+<td align="right">722,933</td>
+<td align="right">0.156</td>
+<td align="left">R+8</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 4 (115th Congress), Michigan</td>
+<td align="left">John Moolenaar (R)</td>
+<td align="right">700,749</td>
+<td align="right">0.159</td>
+<td align="left">R+10</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 1 (115th Congress), Tennessee</td>
+<td align="left">Phil Roe (R)</td>
+<td align="right">712,059</td>
+<td align="right">0.159</td>
+<td align="left">R+28</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 6 (115th Congress), Indiana</td>
+<td align="left">Greg Pence (R)</td>
+<td align="right">718,307</td>
+<td align="right">0.160</td>
+<td align="left">R+18</td>
+</tr>
+<tr class="odd">
+<td align="left">Congressional District 1 (115th Congress), New Hampshire</td>
+<td align="left">Chris Pappas (D)</td>
+<td align="right">670,467</td>
+<td align="right">0.167</td>
+<td align="left">R+2</td>
+</tr>
+<tr class="even">
+<td align="left">Congressional District 1 (115th Congress), Michigan</td>
+<td align="left">Jack Bergman (R)</td>
+<td align="right">700,228</td>
+<td align="right">0.168</td>
+<td align="left">R+9</td>
+</tr>
+</tbody>
+</table>
 
 
 
@@ -439,6 +892,23 @@ $(document).ready(function () {
 
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
